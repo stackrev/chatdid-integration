@@ -5,8 +5,8 @@
     "scripts": {
         "dev": "next dev",
         "build": "next build",
-        "start": "next start -p $PORT",
-        "azuredeploy": "npm install && npm run build && next start -p $PORT"
+        "start": "next start -p ${PORT:-3000}",
+        "azuredeploy": "npm ci && npm run build && next start -p $PORT"
 
     },
     "dependencies": {
