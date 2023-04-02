@@ -1,0 +1,3 @@
+language = "nodejs"
+nodejs_version = "16.x"
+run = "npm run dev"

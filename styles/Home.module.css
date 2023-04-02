@@ -7,6 +7,10 @@
   align-items: center;
 }
 
+.rounded-logo {
+  border-radius: 30px; /* Adjust this value to change the roundness */
+}
+
 .main {
   padding: 5rem 0;
   flex: 1;
@@ -14,6 +18,49 @@
   flex-direction: column;
   justify-content: center;
   align-items: center;
+}
+
+.chatContainer {
+  background-color: rgba(245, 245, 245, 0.40); 
+  padding: 1rem;
+  max-height: 60vh;
+  overflow-y: auto;
+  border-radius: 5px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.chat-bubble {
+  max-width: 75%;
+  border-radius: 1rem;
+  padding: 0.5rem 1rem;
+  margin-bottom: 0.5rem;
+}
+
+.userbubble {
+  background-color: #3b82f6;
+  color: white;
+  align-self: flex-end;
+  border-bottom-right-radius: 0;
+}
+
+.aibubble {
+  background-color: rgba(229, 231, 235, 0.7);
+  color: #6b7280;
+  align-self: flex-start;
+  border-bottom-left-radius: 0;
+}
+
+.chat-input {
+  width: 100%;
+  margin-top: 0.5rem;
+}
+
+.chat-input input {
+  width: 100%;
+  padding: 0.5rem;
+  border-radius: 5px;
+  border: 1px solid #ccc;
+  outline: none;
 }
 
 .footer {
