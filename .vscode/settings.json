@@ -1,0 +1,4 @@
+{
+    "appService.defaultWebAppToDeploy": "undefined/subscriptions/91184e29-bbba-4f51-9cf0-7e4db3dde6a9/resourceGroups/lawyerlyai/providers/Microsoft.Web/sites/lawyerlyai",
+    "appService.deploySubpath": "."
+}
