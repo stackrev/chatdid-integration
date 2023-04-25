@@ -1,5 +1,5 @@
 import Head from "next/head";
-import Logo from "./components/Logo";
+import Logo from "../components/Logo";
 import {
   FaFacebookF,
   FaLinkedinIn,

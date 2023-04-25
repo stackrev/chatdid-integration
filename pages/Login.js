@@ -6,7 +6,7 @@ import {
   FaEnvelope,
   FaLock,
 } from "react-icons/fa";
-import Logo from "./components/Logo";
+import Logo from "../components/Logo";
 
 const Login = () => {
   return (

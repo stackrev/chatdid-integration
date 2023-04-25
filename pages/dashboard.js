@@ -2,6 +2,23 @@ import Head from "next/head";
 import Image from "next/image";
 import styles from "../styles/Home.module.css";
 import { useState, useEffect, Fragment, useRef } from "react";
+import {
+  RTCPeerConnection,
+  setRTCPeerConnection,
+  peerConnection,
+  setPeerConnection,
+  streamId,
+  setStreamId,
+  sessionId,
+  setSessionId,
+  sessionClientAnswer,
+  onIceCandidate,
+  onIceGatheringStateChange,
+  onIceConnectionStateChange,
+  onConnectionStateChange,
+  onSignalingStateChange,
+  setSessionClientAnswer,
+} from "../lib/DIDStreaming";
 
 const DID_API = {
   key: "amFuamFubmFndGVnYWFsQGdtYWlsLmNvbQ:q0t4SOneT7749CA9ZT-Gs",
@@ -33,16 +50,6 @@ export default function Home() {
   // React Hooks
   const [data, setData] = useState([]);
   const [userMessage, setUserMessage] = useState("");
-  const [mode, setMode] = useState(1); // 1: Text, -1 : Speech
-  const talkVideoRef = useRef(null);
-
-  const [livePeer, setLivePeer] = useState({});
-  const [liveStreamId, setLiveStreamId] = useState(null);
-  const [liveSessionId, setLiveSessionId] = useState(null);
-  let peerConnection;
-  let streamId;
-  let sessionId;
-  let sessionClientAnswer;
 
   function handleResetClick() {
     // reset the conversation session
@@ -112,54 +119,9 @@ export default function Home() {
     }
   };
 
-  function onIceGatheringStateChange() {
-    // iceGatheringStatusLabel.innerText = peerConnection.iceGatheringState;
-    // iceGatheringStatusLabel.className =
-    //   "iceGatheringState-" + peerConnection.iceGatheringState;
-  }
-  function onIceCandidate(event) {
-    console.log("onIceCandidate", event);
-    if (event.candidate) {
-      const { candidate, sdpMid, sdpMLineIndex } = event.candidate;
+  const [mode, setMode] = useState(1); // 1: Text, -1 : Speech
+  const talkVideoRef = useRef(null);
 
-      fetch(`${DID_API.url}/talks/streams/${streamId}/ice`, {
-        method: "POST",
-        headers: {
-          Authorization: `Basic ${DID_API.key}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          candidate,
-          sdpMid,
-          sdpMLineIndex,
-          session_id: sessionId,
-        }),
-      });
-    }
-  }
-  function onIceConnectionStateChange() {
-    // iceStatusLabel.innerText = peerConnection.iceConnectionState;
-    // iceStatusLabel.className =
-    //   "iceConnectionState-" + peerConnection.iceConnectionState;
-    if (
-      peerConnection.iceConnectionState === "failed" ||
-      peerConnection.iceConnectionState === "closed"
-    ) {
-      stopAllStreams();
-      closePC();
-    }
-  }
-  function onConnectionStateChange() {
-    // not supported in firefox
-    // peerStatusLabel.innerText = peerConnection.connectionState;
-    // peerStatusLabel.className =
-    //   "peerConnectionState-" + peerConnection.connectionState;
-  }
-  function onSignalingStateChange() {
-    // signalingStatusLabel.innerText = peerConnection.signalingState;
-    // signalingStatusLabel.className =
-    //   "signalingState-" + peerConnection.signalingState;
-  }
   function onTrack(event) {
     const remoteStream = event.streams[0];
     setVideoElement(remoteStream);
@@ -167,7 +129,7 @@ export default function Home() {
 
   async function createPeerConnection(offer, iceServers) {
     if (!peerConnection) {
-      peerConnection = new RTCPeerConnection({ iceServers });
+      setPeerConnection(new RTCPeerConnection({ iceServers }));
       peerConnection.addEventListener(
         "icegatheringstatechange",
         onIceGatheringStateChange,
@@ -254,11 +216,11 @@ export default function Home() {
     // peerStatusLabel.innerText = "";
     console.log("stopped peer connection");
     if (pc === peerConnection) {
-      peerConnection = null;
+      setPeerConnection(null);
     }
   }
 
-  const connectToDid = async () => {
+  const createTalk = async () => {
     if (peerConnection && peerConnection.connectionState === "connected") {
       return;
     }
@@ -283,21 +245,21 @@ export default function Home() {
       ice_servers: iceServers,
       session_id: newSessionId,
     } = await sessionResponse.json();
-    streamId = newStreamId;
-    sessionId = newSessionId;
+    setStreamId(newStreamId);
+    setSessionId(newSessionId);
 
     try {
-      sessionClientAnswer = await createPeerConnection(offer, iceServers);
+      let newSessionClientAnswer = await createPeerConnection(
+        offer,
+        iceServers
+      );
+      setSessionClientAnswer(newSessionClientAnswer);
     } catch (e) {
       console.log("error during streaming setup", e);
       stopAllStreams();
       closePC();
       return;
     }
-
-    setLivePeer(peerConnection);
-    setLiveStreamId(streamId);
-    setLiveSessionId(sessionId);
 
     const sdpResponse = await fetch(
       `${DID_API.url}/talks/streams/${streamId}/sdp`,
@@ -317,15 +279,15 @@ export default function Home() {
 
   const startTalk = async () => {
     // connectionState not supported in firefox
-    console.log("peerConnection", livePeer);
+    console.log("peerConnection", peerConnection);
     if (
-      livePeer?.signalingState === "stable" ||
-      livePeer?.iceConnectionState === "connected"
+      peerConnection?.signalingState === "stable" ||
+      peerConnection?.iceConnectionState === "connected"
     ) {
       const talkResponse = await fetch(`/api/chatdid/createStream`, {
         body: JSON.stringify({
-          streamId: liveStreamId,
-          sessionId: liveSessionId,
+          streamId: streamId,
+          sessionId: sessionId,
         }),
         headers: {
           "Content-Type": "application/json",
@@ -351,10 +313,27 @@ export default function Home() {
 
   useEffect(() => {
     scrollToLastMessage();
+  }, [data]);
+
+  useEffect(() => {
     switchTheme();
     talkVideoRef.current.setAttribute("playsinline", "");
-    connectToDid();
-  }, [data]);
+    if (typeof window !== "undefined") {
+      setRTCPeerConnection(
+        (
+          window.RTCPeerConnection ||
+          window.webkitRTCPeerConnection ||
+          window.mozRTCPeerConnection
+        ).bind(window)
+      );
+      createTalk();
+    }
+    return () => {
+      if (typeof window !== "undefined") {
+        destroyTalk();
+      }
+    };
+  }, []);
 
   function toggleTheme() {
     setMode(-mode);
@@ -557,7 +536,7 @@ export default function Home() {
               type="button"
               onClick={startTalk}
             >
-              Whatsapp
+              Test
             </button>
           </form>
         </main>
