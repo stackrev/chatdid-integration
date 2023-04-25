@@ -79,7 +79,7 @@
   padding: 0.5rem; /* Decrease the padding */
   font-size: 0.7rem; /* Decrease the font size */
   line-height: 1.2; /* Adjust the line height */
-  position: relative;
+  /* position: relative; */
   bottom: -50px;
   border-radius: 5px;
 }
@@ -93,7 +93,7 @@
   display: flex;
   justify-content: center;
   align-items: center;
-}
+} 
 
 .center {
   text-align: center;
