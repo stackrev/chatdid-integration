@@ -1,7 +1,7 @@
 import Image from "next/image";
-import styles from "../../styles/Home.module.css";
+import styles from "../styles/Home.module.css";
 
-const Logo = (size) => {
+const Logo = ({ size }) => {
   return (
     <div
       style={{
