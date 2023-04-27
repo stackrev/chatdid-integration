@@ -1,5 +1,6 @@
 export default async (req, res) => {
-  const { streamId, sessionId } = req.body;
+  const { streamId, sessionId, inputText } = req.body;
+  console.log("inputText", inputText);
 
   const talkResponse = await fetch(
     `${process.env.DID_URL}/talks/streams/${streamId}`,
@@ -13,9 +14,10 @@ export default async (req, res) => {
       // mode: "no-cors",
       body: JSON.stringify({
         script: {
-          type: "audio",
-          audio_url:
-            "https://d-id-public-bucket.s3.us-west-2.amazonaws.com/webrtc.mp3",
+          input: inputText,
+          type: "text",
+          provider: { type: "microsoft", voice_id: "en-ZA-LeahNeural" },
+          ssml: "false",
         },
         driver_url: "bank://lively/",
         config: {

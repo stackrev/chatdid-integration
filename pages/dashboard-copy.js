@@ -1,14 +1,31 @@
 import Head from "next/head";
+import Image from "next/image";
 import styles from "../styles/Home.module.css";
 import { useState, useEffect, Fragment, useRef } from "react";
+import {
+  RTCPeerConnection,
+  setRTCPeerConnection,
+  peerConnection,
+  setPeerConnection,
+  streamId,
+  setStreamId,
+  sessionId,
+  setSessionId,
+  sessionClientAnswer,
+  onIceCandidate,
+  onIceGatheringStateChange,
+  onIceConnectionStateChange,
+  onConnectionStateChange,
+  onSignalingStateChange,
+  setSessionClientAnswer,
+} from "../lib/DIDStreaming";
+
 import { faceIcon, textIcon } from "./svgs.js";
 import Logo from "../components/Logo";
-
-let peerConnection;
-let streamId;
-let sessionId;
-let sessionClientAnswer;
-
+const DID_API = {
+  key: "amFuamFubmFndGVnYWFsQGdtYWlsLmNvbQ:q0t4SOneT7749CA9ZT-Gs",
+  url: "https://api.d-id.com",
+};
 function Footer() {
   return (
     <footer className={styles.footer}>
