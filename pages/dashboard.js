@@ -39,6 +39,8 @@ export default function Home() {
   // React Hooks
   const [data, setData] = useState([]);
   const [userMessage, setUserMessage] = useState("");
+  const [curResMessage, setCurResMessage] = useState("");
+  const [standingTextIntervalId, setStandingTextIntervalId] = useState(-1);
 
   function handleResetClick() {
     // reset the conversation session
@@ -54,6 +56,34 @@ export default function Home() {
     // Add the user's message to the chat container immediately
     setData((prevData) => [...prevData, { role: "user", text: userMessage }]);
     setUserMessage(""); // Clear the input box immediately
+
+    // Add standing text
+    setData((prevData) => [
+      ...prevData,
+      {
+        role: "ai",
+        text: "",
+      },
+    ]);
+
+    let currentText = ".";
+    let dotCount = 0;
+    let intervalId = setInterval(() => {
+      currentText += ".";
+      dotCount++;
+      if (dotCount == 3) {
+        dotCount = 0;
+        currentText = ".";
+      }
+      setData((prevData) => [
+        ...prevData.slice(0, prevData.length - 1),
+        {
+          role: "ai",
+          text: currentText,
+        },
+      ]);
+    }, 300);
+    setStandingTextIntervalId(intervalId);
 
     const res = await fetch(`/api/openai`, {
       body: JSON.stringify({
@@ -73,33 +103,11 @@ export default function Home() {
     if (newData && newData.text) {
       // Simulate streaming the AI's response
       const responseText = newData.text;
+      // Set Current Response from chatGPT.
+      setCurResMessage(newData.text);
 
       // Start talking
-      talkBtnClick(responseText);
-
-      const streamingDelay = 10; // Time in milliseconds between each character appearing
-      let currentText = "";
-      setData((prevData) => [
-        // Update the last message in the chat container with the current text
-        ...prevData,
-        {
-          role: "ai",
-          text: "",
-        },
-      ]);
-      for (let i = 0; i < responseText.length; i++) {
-        setTimeout(() => {
-          currentText += responseText[i];
-          setData((prevData) => [
-            // Update the last message in the chat container with the current text
-            ...prevData.slice(0, prevData.length - 1),
-            {
-              role: "ai",
-              text: currentText,
-            },
-          ]);
-        }, i * streamingDelay);
-      }
+      talkBtnClick(newData.text);
     } else {
       console.error("Failed to get AI response.");
     }
@@ -449,12 +457,34 @@ export default function Home() {
 
   function onTalkVideoPlay() {
     console.log("play for ", talkDuration, "seconds", Date.now() / 1000);
-    setStandOrTalk(-1);
+    setTimeout(() => {
+      setStandOrTalk(-1);
+    }, 1200);
     setTimeout(() => {
       console.log("pause", Date.now() / 1000);
       talkVideoRef.current.pause();
       setStandOrTalk(1);
     }, talkDuration * 1000 + 1000);
+    setTimeout(() => {
+      // Clear standing text
+      clearInterval(standingTextIntervalId);
+      // Update the last message in the chat container with the current text
+      let currentText = "";
+      const streamingDelay =
+        (talkDuration * 1000 - 3000) / curResMessage.length; // Time in milliseconds between each character appearing
+      for (let i = 0; i < curResMessage.length; i++) {
+        setTimeout(() => {
+          currentText += curResMessage[i];
+          setData((prevData) => [
+            ...prevData.slice(0, prevData.length - 1),
+            {
+              role: "ai",
+              text: currentText,
+            },
+          ]);
+        }, i * streamingDelay);
+      }
+    }, 2500);
   }
   function onTalkVideoPause() {
     console.log("pause");
