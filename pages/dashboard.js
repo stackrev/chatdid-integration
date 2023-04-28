@@ -112,8 +112,12 @@ export default function Home() {
     }
   };
 
+  const switchToggleRef = useRef(null);
   const [mode, setMode] = useState(1); // 1: Text, -1 : Speech
-  const talkVideoRef = useRef(null);
+  const standVideoRef = useRef(null); // Standing Video
+  const talkVideoRef = useRef(null); // Talking Video
+  const [isStandOrTalk, setStandOrTalk] = useState(1); // 1 : Stand, -1 : Talk
+  const [talkDuration, setTalkDuration] = useState(0);
 
   const talkBtnClick = async (inputText) => {
     if (
@@ -146,6 +150,16 @@ export default function Home() {
       )
         .then((res) => {
           console.log("talkResponse: ", res);
+          res
+            .json()
+            .then((data) => {
+              console.log("data:", data);
+              setTalkDuration(data.duration);
+              talkVideoRef.current.play();
+            })
+            .catch((err) => {
+              console.log("talkResponse JSON err: ", err);
+            });
         })
         .catch((err) => {
           console.log("talkResponse err: ", err);
@@ -192,7 +206,8 @@ export default function Home() {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        source_url: "https://clips-presenters.d-id.com/jess/thumbnail.png",
+        source_url:
+          "https://i.ibb.co/Db6qzTj/1682624829325-00-00-00-20230428-045418-0.png",
       }),
     });
 
@@ -240,9 +255,8 @@ export default function Home() {
   function stopAllStreams() {
     if (talkVideoRef.current.srcObject) {
       console.log("stopping video streams");
-      document
-        .getElementById("talk-video")
-        .srcObject.getTracks()
+      talkVideoRef.current.srcObject
+        .getTracks()
         .forEach((track) => track.stop());
       talkVideoRef.current.srcObject = null;
     }
@@ -274,10 +288,10 @@ export default function Home() {
       true
     );
     pc.removeEventListener("track", onTrack, true);
-    document.getElementById("ice-gathering-status-label").innerText = "";
-    document.getElementById("signaling-status-label").innerText = "";
-    document.getElementById("ice-status-label").innerText = "";
-    document.getElementById("peer-status-label").innerText = "";
+    // document.getElementById("ice-gathering-status-label").innerText = "";
+    // document.getElementById("signaling-status-label").innerText = "";
+    // document.getElementById("ice-status-label").innerText = "";
+    // document.getElementById("peer-status-label").innerText = "";
     console.log("stopped peer connection");
     if (pc === peerConnection) {
       peerConnection = null;
@@ -381,48 +395,75 @@ export default function Home() {
     // setVideoElement(remoteStream);
     talkVideoRef.current.srcObject = remoteStream;
   }
-  function setVideoElement(stream) {
-    if (!stream) return;
-    talkVideoRef.current.srcObject = stream;
+  // function setVideoElement(stream) {
+  //   if (!stream) return;
+  //   talkVideoRef.current.srcObject = stream;
 
-    // safari hotfix
-    if (talkVideoRef.current.paused) {
-      document
-        .getElementById("talk-video")
-        .play()
-        .then((_) => {})
-        .catch((e) => {});
-    }
-  }
+  //   // safari hotfix
+  //   if (talkVideoRef.current.paused) {
+  //     talkVideoRef.current
+  //       .play()
+  //       .then((_) => {})
+  //       .catch((e) => {});
+  //   }
+  // }
 
   useEffect(() => {
     scrollToLastMessage();
   }, [data]);
 
   useEffect(() => {
+    connectBtnClick();
     switchTheme();
-    talkVideoRef.current.setAttribute("playsinline", "");
+    // talkVideoRef.current.setAttribute("playsinline", "");
   }, []);
 
   function toggleTheme() {
-    setMode(-mode);
+    if (mode === 1) standVideoRef.current.play();
+    else standVideoRef.current.pause();
     switchTheme(-mode);
+    setMode(-mode);
   }
   function switchTheme(md) {
-    const switchToggle = document.querySelector("#switch-toggle");
+    //const switchToggle = document.querySelector("#switch-toggle");
     if (md == -1) {
-      switchToggle.classList.remove("bg-green-400", "-translate-x-2");
-      switchToggle.classList.add("bg-teal-400", "translate-x-full");
+      switchToggleRef.current.classList.remove(
+        "bg-green-400",
+        "-translate-x-2"
+      );
+      switchToggleRef.current.classList.add("bg-teal-400", "translate-x-full");
       setTimeout(() => {
-        switchToggle.innerHTML = faceIcon;
+        switchToggleRef.current.innerHTML = faceIcon;
       }, 250);
     } else {
-      switchToggle.classList.add("bg-green-400", "-translate-x-2");
-      switchToggle.classList.remove("bg-teal-400", "translate-x-full");
+      switchToggleRef.current.classList.add("bg-green-400", "-translate-x-2");
+      switchToggleRef.current.classList.remove(
+        "bg-teal-400",
+        "translate-x-full"
+      );
       setTimeout(() => {
-        switchToggle.innerHTML = textIcon;
+        switchToggleRef.current.innerHTML = textIcon;
       }, 250);
     }
+  }
+
+  function onTalkVideoPlay() {
+    console.log("play for ", talkDuration, "seconds", Date.now() / 1000);
+    setStandOrTalk(-1);
+    setTimeout(() => {
+      console.log("pause", Date.now() / 1000);
+      talkVideoRef.current.pause();
+      setStandOrTalk(1);
+    }, talkDuration * 1000 + 1000);
+  }
+  function onTalkVideoPause() {
+    console.log("pause");
+  }
+  function onTalkVideoSuspend() {
+    console.log("suspend");
+  }
+  function onTalkVideoWaiting() {
+    console.log("waiting");
   }
 
   // What we want to render
@@ -449,6 +490,7 @@ export default function Home() {
               >
                 <div
                   id="switch-toggle"
+                  ref={switchToggleRef}
                   className="w-12 h-12 relative rounded-full transition duration-500 transform bg-green-400 -translate-x-2 p-1 text-white"
                 >
                   <svg
@@ -470,7 +512,7 @@ export default function Home() {
           </div>
           <div
             className={`${
-              mode == 1 ? "hidden" : ""
+              mode === 1 ? "hidden" : ""
             } w-full flex justify-center`}
           >
             <div
@@ -478,19 +520,42 @@ export default function Home() {
               className={`${styles.chatContainer} rounded-md mb-2 shadow-md w-[16rem] h-[16rem] `}
             >
               {/* added "id=video-wrapper" */}
-              <video
-                ref={talkVideoRef}
-                id="talk-video"
-                width="270"
-                height="270"
-                autoPlay
-              ></video>
+              <div className={`${isStandOrTalk === 1 ? "hidden" : ""}`}>
+                <video
+                  ref={talkVideoRef}
+                  id="talk-video"
+                  width="512"
+                  height="512"
+                  autoPlay
+                  playsInline
+                  onPlay={onTalkVideoPlay}
+                  // onPause={onTalkVideoPause}
+                  // onSuspend={onTalkVideoSuspend}
+                  // onWaiting={onTalkVideoWaiting}
+                ></video>
+              </div>
+              {/* <div className={`${isStandOrTalk === -1 ? "hidden" : ""}`}>
+                Standing
+              </div> */}
+              <div className={`${isStandOrTalk === -1 ? "hidden" : ""}`}>
+                <video
+                  ref={standVideoRef}
+                  id="stand-video"
+                  width="512"
+                  height="512"
+                  autoPlay
+                  loop
+                  playsInline
+                  src="standing.mp4"
+                  type="video/mp4"
+                ></video>
+              </div>
             </div>
           </div>
           {/* Chat container */}
           <div
             className={`${styles.chatContainer} ${
-              mode == -1 ? "" : "" //mode == -1 ? "hidden" : ""
+              mode === -1 ? "" : "" //mode === -1 ? "hidden" : ""
             } p-4 rounded-md shadow-md h-[10rem]`}
           >
             {data.map((message, index) => (
@@ -566,6 +631,7 @@ export default function Home() {
             >
               Test
             </button>
+            {/* <span>isStandOrTalk:{isStandOrTalk}</span> */}
           </form>
         </main>
         {/* Disclaimer and Footer */}
