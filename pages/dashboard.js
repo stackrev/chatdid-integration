@@ -9,11 +9,6 @@ let streamId;
 let sessionId;
 let sessionClientAnswer;
 
-const DID_API = {
-  key: "amFuamFubmFndGVnYWFsQGdtYWlsLmNvbQ:q0t4SOneT7749CA9ZT-Gs",
-  url: "https://api.d-id.com",
-};
-
 function Footer() {
   return (
     <footer className={styles.footer}>
@@ -133,29 +128,17 @@ export default function Home() {
       peerConnection?.iceConnectionState === "connected"
     ) {
       // console.log("audioURL: ", audioURL);
-      const talkResponse = await fetch(
-        `${DID_API.url}/talks/streams/${streamId}`,
-        {
-          method: "POST",
-          headers: {
-            Authorization: `Basic ${DID_API.key}`,
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            script: {
-              input: inputText,
-              type: "text",
-              provider: { type: "microsoft", voice_id: "en-ZA-LeahNeural" },
-              ssml: "false",
-            },
-            driver_url: "bank://lively/",
-            config: {
-              stitch: true,
-            },
-            session_id: sessionId,
-          }),
-        }
-      )
+      const talkResponse = await fetch(`/api/chatdid/createStream`, {
+        body: JSON.stringify({
+          streamId: streamId,
+          sessionId: sessionId,
+          inputText: inputText,
+        }),
+        headers: {
+          "Content-Type": "application/json",
+        },
+        method: "POST",
+      })
         .then((res) => {
           console.log("talkResponse: ", res);
           res
@@ -173,28 +156,6 @@ export default function Home() {
           console.log("talkResponse err: ", err);
         });
     }
-    // const inputText = document.getElementById("textInput").value;
-    // const talkResponse = await fetch(`${DID_API.url}/talks/streams/${streamId}`,
-    //     {
-    //         method: 'POST',
-    //         headers: { Authorization: `Basic ${DID_API.key}`, 'Content-Type': 'application/json' },
-    //         body: JSON.stringify({
-    //             'script': {
-    //                 'type': 'text',
-    //                 'provider': {'type': 'microsoft', 'voice_id': 'Jenny'},
-    //                 'input': inputText,
-    //                 'ssml': 'false'
-    //               },
-    //             // 'config': {'fluent': 'false', 'pad_audio': '0.0'},
-    //             // 'driver_url': 'bank://lively/',
-    //             // 'sessionId': sessionId
-    //         }),
-    //     }).then(res => {
-    //         console.log("talkResponse: ", res);
-    //     }).catch(err => {
-    //         console.log("talkResponse err: ", err);
-    //     });
-    // }
   };
 
   const connectBtnClick = async () => {
@@ -207,10 +168,9 @@ export default function Home() {
     stopAllStreams();
     closePC();
 
-    const sessionResponse = await fetch(`${DID_API.url}/talks/streams`, {
+    const sessionResponse = await fetch(`api/chatdid/createTalk`, {
       method: "POST",
       headers: {
-        Authorization: `Basic ${DID_API.key}`,
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
@@ -238,20 +198,17 @@ export default function Home() {
     }
 
     //return a session description
-    const sdpResponse = await fetch(
-      `${DID_API.url}/talks/streams/${streamId}/sdp`,
-      {
-        method: "POST",
-        headers: {
-          Authorization: `Basic ${DID_API.key}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          answer: sessionClientAnswer,
-          session_id: sessionId,
-        }),
-      }
-    )
+    const sdpResponse = await fetch(`api/chatdid/startStream`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        streamId,
+        sessionClientAnswer,
+        sessionId,
+      }),
+    })
       .then((res) => {
         console.log("sdpResponse: ", res);
       })
@@ -356,18 +313,18 @@ export default function Home() {
     if (event.candidate) {
       const { candidate, sdpMid, sdpMLineIndex } = event.candidate;
 
-      fetch(`${DID_API.url}/talks/streams/${streamId}/ice`, {
-        method: "POST",
-        headers: {
-          Authorization: `Basic ${DID_API.key}`,
-          "Content-Type": "application/json",
-        },
+      fetch(`/api/chatdid/submitNetInf`, {
         body: JSON.stringify({
+          streamId,
           candidate,
           sdpMid,
           sdpMLineIndex,
-          session_id: sessionId,
+          sessionId,
         }),
+        headers: {
+          "Content-Type": "application/json",
+        },
+        method: "POST",
       });
     }
   }
@@ -567,6 +524,7 @@ export default function Home() {
               {/* <div className={`${isStandOrTalk === -1 ? "hidden" : ""}`}>
                 Standing
               </div> */}
+
               <div className={`${isStandOrTalk === -1 ? "hidden" : ""}`}>
                 <video
                   ref={standVideoRef}
@@ -657,7 +615,9 @@ export default function Home() {
             <button
               className="inline-flex mt-5 mr-1 items-center px-4 py-2 border border-white text-white bg-blue-500 hover:bg-black hover:border-white-500 hover:text-white-500 shadow-sm text-sm font-medium rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
               type="button"
-              onClick={talkBtnClick}
+              onClick={() => {
+                setStandOrTalk(-1);
+              }}
             >
               Test
             </button>

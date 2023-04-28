@@ -27,6 +27,6 @@ export default async (req, res) => {
       }),
     }
   );
-
-  res.status(200).json(talkResponse);
+  const response = await talkResponse.json();
+  res.status(200).json(response);
 };
