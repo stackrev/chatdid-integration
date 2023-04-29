@@ -119,7 +119,7 @@ export default function Home() {
   const [mode, setMode] = useState(1); // 1: Text, -1 : Speech
   const standVideoRef = useRef(null); // Standing Video
   const talkVideoRef = useRef(null); // Talking Video
-  const [isStandOrTalk, setStandOrTalk] = useState(1); // 1 : Stand, -1 : Talk
+  const [isStandOrTalk, setStandOrTalk] = useState(2); // 2: Stand, 1: Stand fading | -2: Talk, -1: Talk fading
   const [talkDuration, setTalkDuration] = useState(0);
 
   const talkBtnClick = async (inputText) => {
@@ -415,12 +415,24 @@ export default function Home() {
   function onTalkVideoPlay() {
     console.log("play for ", talkDuration, "seconds", Date.now() / 1000);
     setTimeout(() => {
-      setStandOrTalk(-1);
+      setStandOrTalk(1);
+      setTimeout(() => {
+        setStandOrTalk(-1);
+        setTimeout(() => {
+          setStandOrTalk(-2);
+        }, process.env.NEXT_PUBLIC_FADING_DURATION);
+      }, process.env.NEXT_PUBLIC_FADING_DURATION);
     }, 1200);
     setTimeout(() => {
       console.log("pause", Date.now() / 1000);
       talkVideoRef.current.pause();
-      setStandOrTalk(1);
+      setStandOrTalk(-1);
+      setTimeout(() => {
+        setStandOrTalk(1);
+        setTimeout(() => {
+          setStandOrTalk(2);
+        }, process.env.NEXT_PUBLIC_FADING_DURATION);
+      }, process.env.NEXT_PUBLIC_FADING_DURATION);
     }, talkDuration * 1000 + 1000);
     setTimeout(() => {
       // Clear standing text
@@ -507,7 +519,13 @@ export default function Home() {
               className={`${styles.chatContainer} rounded-md mb-2 shadow-md w-[16rem] h-[16rem] `}
             >
               {/* added "id=video-wrapper" */}
-              <div className={`${isStandOrTalk === 1 ? "hidden" : ""}`}>
+              <div
+                className={`transition transform ease-in-out duration-${
+                  process.env.NEXT_PUBLIC_FADING_DURATION
+                }  ${isStandOrTalk === -1 ? "opacity-30" : "opacity-100"} ${
+                  isStandOrTalk > 0 ? "hidden" : ""
+                }`}
+              >
                 <video
                   ref={talkVideoRef}
                   id="talk-video"
@@ -516,16 +534,15 @@ export default function Home() {
                   autoPlay
                   playsInline
                   onPlay={onTalkVideoPlay}
-                  // onPause={onTalkVideoPause}
-                  // onSuspend={onTalkVideoSuspend}
-                  // onWaiting={onTalkVideoWaiting}
                 ></video>
               </div>
-              {/* <div className={`${isStandOrTalk === -1 ? "hidden" : ""}`}>
-                Standing
-              </div> */}
-
-              <div className={`${isStandOrTalk === -1 ? "hidden" : ""}`}>
+              <div
+                className={`transition transform ease-in-out duration-${
+                  process.env.NEXT_PUBLIC_FADING_DURATION
+                }  ${isStandOrTalk === 1 ? "opacity-30" : "opacity-100"} ${
+                  isStandOrTalk < 0 ? "hidden" : ""
+                }`}
+              >
                 <video
                   ref={standVideoRef}
                   id="stand-video"
@@ -616,7 +633,14 @@ export default function Home() {
               className="inline-flex mt-5 mr-1 items-center px-4 py-2 border border-white text-white bg-blue-500 hover:bg-black hover:border-white-500 hover:text-white-500 shadow-sm text-sm font-medium rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
               type="button"
               onClick={() => {
-                setStandOrTalk(-1);
+                setStandOrTalk(1);
+                setTimeout(() => {
+                  setStandOrTalk(-1);
+                  setTimeout(() => {
+                    setStandOrTalk(-2);
+                  }, process.env.NEXT_PUBLIC_FADING_DURATION);
+                }, process.env.NEXT_PUBLIC_FADING_DURATION);
+                console.log(process.env.NEXT_PUBLIC_FADING_DURATION);
               }}
             >
               Test
