@@ -308,6 +308,7 @@ export default function Home() {
     // document.getElementById("ice-gathering-status-label").className =
     //   "iceGatheringState-" + peerConnection.iceGatheringState;
   }
+  
   function onIceCandidate(event) {
     console.log("onIceCandidate", event);
     if (event.candidate) {
@@ -349,12 +350,14 @@ export default function Home() {
     // document.getElementById("peer-status-label").className =
     //   "peerConnectionState-" + peerConnection.connectionState;
   }
+  
   function onSignalingStateChange() {
     // document.getElementById("signaling-status-label").innerText =
     //   peerConnection.signalingState;
     // document.getElementById("signaling-status-label").className =
     //   "signalingState-" + peerConnection.signalingState;
   }
+  
   function onTrack(event) {
     const remoteStream = event.streams[0];
     // setVideoElement(remoteStream);
@@ -389,6 +392,7 @@ export default function Home() {
     switchTheme(-mode);
     setMode(-mode);
   }
+  
   function switchTheme(md) {
     //const switchToggle = document.querySelector("#switch-toggle");
     if (md == -1) {
@@ -455,12 +459,15 @@ export default function Home() {
       }
     }, 2500);
   }
+  
   function onTalkVideoPause() {
     console.log("pause");
   }
+  
   function onTalkVideoSuspend() {
     console.log("suspend");
   }
+  
   function onTalkVideoWaiting() {
     console.log("waiting");
   }
